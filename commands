@@ -1,0 +1,13 @@
+sam init
+
+sam package --output-template packaged.yaml --s3-bucket contact-us-sam-app
+
+sam deploy --template-file packaged.yaml --region eu-west-1 --capabilities CAPABILITY_IAM --stack-name contact-us-sam-app
+aws cloudformation describe-stacks --stack-name contact-us-sam-app
+
+sam local invoke -e ./events/warm_up_request.json ContactUsFunction
+sam local invoke -e ./events/contact_us_request.json ContactUsFunction
+sam local start-api
+
+sam logs --name ContactUsFunction --stack-name contact-us-sam-app
+sam logs --name ContactUsEmailServiceLambda --stack-name ses-email-sender-dev-euw1
