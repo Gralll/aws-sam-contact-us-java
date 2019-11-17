@@ -8,15 +8,13 @@ import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
+import com.amazonaws.services.simpleemail.model.SendEmailRequest;
 import com.amazonaws.services.simpleemail.model.SendEmailResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.BDDMockito;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -25,7 +23,11 @@ import java.io.IOException;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.MockitoAnnotations.initMocks;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(App.class)
@@ -50,14 +52,14 @@ public class AppTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.whenNew(AwsClientFactory.class).withNoArguments().thenReturn(awsClientFactory);
-        BDDMockito.given(context.getLogger()).willReturn(lambdaLogger);
-        BDDMockito.given(awsClientFactory.getSesClient()).willReturn(amazonSimpleEmailService);
-        BDDMockito.given(awsClientFactory.getDynamoDB()).willReturn(dynamoDB);
-        BDDMockito.given(amazonSimpleEmailService.sendEmail(any())).willReturn(new SendEmailResult().withMessageId("123"));
-        BDDMockito.given(dynamoDB.getTable(any())).willReturn(table);
-        BDDMockito.given(table.putItem(any(Item.class))).willReturn(null);
+        initMocks(this);
+        whenNew(AwsClientFactory.class).withNoArguments().thenReturn(awsClientFactory);
+        given(context.getLogger()).willReturn(lambdaLogger);
+        given(awsClientFactory.getSesClient()).willReturn(amazonSimpleEmailService);
+        given(awsClientFactory.getDynamoDB()).willReturn(dynamoDB);
+        given(amazonSimpleEmailService.sendEmail(any(SendEmailRequest.class))).willReturn(new SendEmailResult().withMessageId("123"));
+        given(dynamoDB.getTable(anyString())).willReturn(table);
+        given(table.putItem(any(Item.class))).willReturn(null);
         app = new App();
     }
 
@@ -91,6 +93,6 @@ public class AppTest {
         // then
         assertNotNull(awsProxyResponse);
         assertThat(awsProxyResponse.getStatusCode(), is(201));
-        assertThat(awsProxyResponse.getBody(), is("{\"response\": \"Lambda was warmed up. V4\"}"));
+        assertThat(awsProxyResponse.getBody(), is("{\"response\": \"Lambda was warmed up. V5\"}"));
     }
 }

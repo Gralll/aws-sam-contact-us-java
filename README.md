@@ -2,10 +2,11 @@
 
 This project contains source code and supporting files for a serverless application that you can deploy with the SAM CLI. It includes the following files and folders.
 
-- HelloWorldFunction/src/main - Code for the application's Lambda function.
+- contact-us-function/src/main - Code for the application's Lambda function.
 - events - Invocation events that you can use to invoke the function.
-- HelloWorldFunction/src/test - Unit tests for the application code. 
+- contact-us-function/src/test - Unit tests for the application code. 
 - template.yaml - A template that defines the application's AWS resources.
+- html/mail.html - Contact Us html form with JS scripts for calling API Gateway
 
 The application uses several AWS resources, including Lambda functions and an API Gateway API. These resources are defined in the `template.yaml` file in this project. You can update the template to add AWS resources through the same deployment process that updates your application code.
 
@@ -17,7 +18,7 @@ The AWS Toolkit is an open source plug-in for popular IDEs that uses the SAM CLI
 * [VS Code](https://docs.aws.amazon.com/toolkit-for-vscode/latest/userguide/welcome.html)
 * [Visual Studio](https://docs.aws.amazon.com/toolkit-for-visual-studio/latest/user-guide/welcome.html)
 
-## Deploy the sample application
+## Deploy the ContactUs application
 
 The Serverless Application Model Command Line Interface (SAM CLI) is an extension of the AWS CLI that adds functionality for building and testing Lambda applications. It uses Docker to run your functions in an Amazon Linux environment that matches Lambda. It can also emulate your application's build environment and API.
 
@@ -58,9 +59,13 @@ After deployment is complete you can run the following command to retrieve the A
 ```bash
 contact-us-sam-app$ aws cloudformation describe-stacks \
     --stack-name contact-us-sam-app \
-    --query 'Stacks[].Outputs[?OutputKey==`HelloWorldApi`]' \
+    --query 'Stacks[].Outputs[?OutputKey==`ContactUsApi`]' \
     --output table
 ``` 
+
+After deployment of a back-end part you need to deploy static HTML
+as a website.
+To do this follow the [AWS instruction](https://docs.aws.amazon.com/en_us/AmazonS3/latest/user-guide/static-website-hosting.html)
 
 ## Use the SAM CLI to build and test locally
 
@@ -70,14 +75,14 @@ Build your application with the `sam build` command.
 contact-us-sam-app$ sam build
 ```
 
-The SAM CLI installs dependencies defined in `HelloWorldFunction/build.gradle`, creates a deployment package, and saves it in the `.aws-sam/build` folder.
+The SAM CLI installs dependencies defined in `contact-us-function/build.gradle`, creates a deployment package, and saves it in the `.aws-sam/build` folder.
 
 Test a single function by invoking it directly with a test event. An event is a JSON document that represents the input that the function receives from the event source. Test events are included in the `events` folder in this project.
 
 Run functions locally and invoke them with the `sam local invoke` command.
 
 ```bash
-contact-us-sam-app$ sam local invoke HelloWorldFunction --event events/event.json
+contact-us-sam-app$ sam local invoke ContactUsFunction --event events/event.json
 ```
 
 The SAM CLI can also emulate your application's API. Use the `sam local start-api` to run the API locally on port 3000.
@@ -91,11 +96,11 @@ The SAM CLI reads the application template to determine the API's routes and the
 
 ```yaml
       Events:
-        HelloWorld:
+        ContactUs:
           Type: Api
           Properties:
-            Path: /hello
-            Method: get
+            Path: /contact
+            Method: post
 ```
 
 ## Add a resource to your application
@@ -108,18 +113,18 @@ To simplify troubleshooting, SAM CLI has a command called `sam logs`. `sam logs`
 `NOTE`: This command works for all AWS Lambda functions; not just the ones you deploy using SAM.
 
 ```bash
-contact-us-sam-app$ sam logs -n HelloWorldFunction --stack-name contact-us-sam-app --tail
+contact-us-sam-app$ sam logs -n ContactUsFunction --stack-name contact-us-sam-app --tail
 ```
 
 You can find more information and examples about filtering Lambda function logs in the [SAM CLI Documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-logging.html).
 
 ## Unit tests
 
-Tests are defined in the `HelloWorldFunction/src/test` folder in this project.
+Tests are defined in the `contact-us-function/src/test` folder in this project.
 
 ```bash
-contact-us-sam-app$ cd HelloWorldFunction
-HelloWorldFunction$ gradle test
+contact-us-sam-app$ cd contact-us-function
+contact-us-function$ gradle test
 ```
 
 ## Cleanup

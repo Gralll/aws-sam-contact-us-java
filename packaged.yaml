@@ -14,7 +14,7 @@ Resources:
   ContactUsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://contact-us-sam-app/b5cea3dea6aec39e3925a003b84fe90d
+      CodeUri: s3://contact-us-sam-app/ba93c87208424f2700c144fbcbaed81d
       Handler: com.gralll.sam.App::handleRequest
       Runtime: java8
       MemorySize: 256

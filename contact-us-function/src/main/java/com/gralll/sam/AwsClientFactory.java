@@ -14,13 +14,12 @@ import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient;
 
 public class AwsClientFactory {
 
-    private static AmazonSimpleEmailService sesClient;
-    private static AmazonDynamoDB dynamoDBClient;
-    private static DynamoDB dynamoDB;
+    private AmazonSimpleEmailService sesClient;
+    private DynamoDB dynamoDB;
 
-    public AwsClientFactory() {
+    AwsClientFactory() {
         sesClient = AmazonSimpleEmailServiceClient.builder().withRegion(Regions.EU_WEST_1).build();
-        dynamoDBClient = AmazonDynamoDBClientBuilder.standard().withRegion(Regions.EU_WEST_1).build();
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.standard().withRegion(Regions.EU_WEST_1).build();
         dynamoDB = new DynamoDB(dynamoDBClient);
     }
 
@@ -32,7 +31,4 @@ public class AwsClientFactory {
         return sesClient;
     }
 
-    public AmazonDynamoDB getDynamoDBClient() {
-        return dynamoDBClient;
-    }
 }

@@ -24,17 +24,18 @@ import java.util.Objects;
 
 public class App implements RequestHandler<AwsProxyRequest, AwsProxyResponse> {
 
+    //TODO Use environment variables instead of constants
     private static final String SENDER_EMAIL = "aleksandrgruzdev11@gmail.com";
     private static final String RECIPIENT_EMAIL = "aleksandrgruzdev11@gmail.com";
 
+    // Use static variables to keep a context between executions
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    private static final AwsClientFactory awsClientFactory = new AwsClientFactory();
+    private static final AwsClientFactory AWS_CLIENT_FACTORY = new AwsClientFactory();
 
     /**
      * Send ContactUs form data to a specific email
      * and put the form data into database.
-     *
+     * <p>
      * The handler doesn't have correct error handling.
      *
      * @param request API Gateway request
@@ -43,6 +44,7 @@ public class App implements RequestHandler<AwsProxyRequest, AwsProxyResponse> {
      */
     @Override
     public AwsProxyResponse handleRequest(AwsProxyRequest request, Context context) {
+
         LambdaLogger logger = context.getLogger();
         logger.log("Request was received");
         logger.log(getAsString(request));
@@ -50,7 +52,7 @@ public class App implements RequestHandler<AwsProxyRequest, AwsProxyResponse> {
         // WARMING UP
         if (request.getMultiValueHeaders().containsKey("X-WARM-UP")) {
             logger.log("Lambda was warmed up");
-            return buildResponse(201, "Lambda was warmed up. V4");
+            return buildResponse(201, "Lambda was warmed up. V5");
         }
 
         ContactUsRequest contactUsRequest = getContactUsRequest(request);
@@ -73,24 +75,24 @@ public class App implements RequestHandler<AwsProxyRequest, AwsProxyResponse> {
         }
     }
 
-    private AwsProxyResponse buildResponse(int statusCode, String body) {
-        AwsProxyResponse awsProxyResponse = new AwsProxyResponse();
-        awsProxyResponse.setBody(String.format("{\"response\": \"%s\"}", body));
-        awsProxyResponse.addHeader("Access-Control-Allow-Origin", "*");
-        //awsProxyResponse.addHeader("Content-Type", "application/json");
-        awsProxyResponse.setStatusCode(statusCode);
-        return awsProxyResponse;
+    private void addEmailDetailsToDb(ContactUsRequest contactUsRequest, SendEmailResult sendEmailResult) {
+        AWS_CLIENT_FACTORY.getDynamoDB().getTable("ContactUsTable")
+                          .putItem(new Item()
+                                  .withPrimaryKey("Id", sendEmailResult.getMessageId())
+                                  .withString("Subject", contactUsRequest.getSubject())
+                                  .withString("Username", contactUsRequest.getUsername())
+                                  .withString("Phone", contactUsRequest.getPhone())
+                                  .withString("Email", contactUsRequest.getEmail())
+                                  .withString("Question", contactUsRequest.getQuestion()));
     }
 
-    private void addEmailDetailsToDb(ContactUsRequest contactUsRequest, SendEmailResult sendEmailResult) {
-        awsClientFactory.getDynamoDB().getTable("ContactUsTable")
-                        .putItem(new Item()
-                                .withPrimaryKey("Id", sendEmailResult.getMessageId())
-                                .withString("Subject", contactUsRequest.getSubject())
-                                .withString("Username", contactUsRequest.getUsername())
-                                .withString("Phone", contactUsRequest.getPhone())
-                                .withString("Email", contactUsRequest.getEmail())
-                                .withString("Question", contactUsRequest.getQuestion()));
+    private String fillTemplate(String emailTemplate, ContactUsRequest contactUsRequest) {
+        return String.format(
+                emailTemplate,
+                contactUsRequest.getUsername(),
+                contactUsRequest.getEmail(),
+                contactUsRequest.getPhone(),
+                contactUsRequest.getQuestion());
     }
 
     private SendEmailResult sendEmail(LambdaLogger logger, ContactUsRequest contactUsRequest) {
@@ -112,21 +114,22 @@ public class App implements RequestHandler<AwsProxyRequest, AwsProxyResponse> {
                                                 .withData(email))));
         logger.log("Email template is ready");
 
-        return awsClientFactory.getSesClient().sendEmail(sendEmailRequest);
+        return AWS_CLIENT_FACTORY.getSesClient().sendEmail(sendEmailRequest);
     }
 
-    private String fillTemplate(String emailTemplate, ContactUsRequest contactUsRequest) {
-        return String.format(
-                emailTemplate,
-                contactUsRequest.getUsername(),
-                contactUsRequest.getEmail(),
-                contactUsRequest.getPhone(),
-                contactUsRequest.getQuestion());
+    private AwsProxyResponse buildResponse(int statusCode, String body) {
+        AwsProxyResponse awsProxyResponse = new AwsProxyResponse();
+        awsProxyResponse.setBody(String.format("{\"response\": \"%s\"}", body));
+        awsProxyResponse.addHeader("Access-Control-Allow-Origin", "*");
+        awsProxyResponse.setStatusCode(statusCode);
+        return awsProxyResponse;
     }
 
     private String getEmailTemplate() {
         try {
-            return IOUtils.toString(Objects.requireNonNull(this.getClass().getClassLoader().getResourceAsStream("email_template.html")),
+            return IOUtils.toString(
+                    Objects.requireNonNull(this.getClass().getClassLoader()
+                                               .getResourceAsStream("email_template.html")),
                     StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException(e);
