@@ -63,9 +63,13 @@ contact-us-sam-app$ aws cloudformation describe-stacks \
     --output table
 ``` 
 
-After deployment of a back-end part you need to deploy static HTML
+### Additional actions
+
+1) After deployment of a back-end part you need to deploy static HTML
 as a website.
 To do this follow the [AWS instruction](https://docs.aws.amazon.com/en_us/AmazonS3/latest/user-guide/static-website-hosting.html)
+
+2) Also, SES should be configured separatelly. It requires manual verification of your email. See [detailed instruction here](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/verify-email-addresses.html)
 
 ## Use the SAM CLI to build and test locally
 
